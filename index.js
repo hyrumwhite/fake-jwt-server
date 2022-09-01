@@ -5,7 +5,7 @@ app.use(cookieParser());
 
 app.get("/jwt", (req, res) => {
   if (!req.cookies["fake-session"]) {
-    return res.send(401);
+    return res.sendStatus(401);
   }
   res.header("content-type", "text/plain");
   res.send(
