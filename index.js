@@ -20,10 +20,8 @@ const refreshJWT = () => {
 refreshJWT();
 setInterval(refreshJWT, 1000 * 60 * 15);
 app.use((req, res, next) => {
-	res.header(
-		"Access-Control-Allow-Origin",
-		req.headers?.referer?.slice(0, -1) || "http://localhost:3000"
-	);
+	let origin = req.headers?.referer?.slice(0, -1) || "http://localhost:3000";
+	res.header("Access-Control-Allow-Origin", origin);
 	res.header("Access-Control-Allow-Credentials", true);
 	res.header(
 		"Access-Control-Allow-Headers",
@@ -59,26 +57,28 @@ app.post("/login", (req, res) => {
 });
 
 app.use((req, res, next) => {
-	let date = new Date();
-	date.setMinutes(date.getMinutes() + 5);
-	let expires = Date.now() + 1000 * 60 * 5;
-	res.cookie("fake-session", "fake-value", {
-		expires: new Date(expires),
-	});
+	if (req.method != "OPTIONS") {
+		if (
+			!req.headers.authorization ||
+			!req.headers.authorization.includes(jwt)
+		) {
+			return res.status(401).send("Unauthorized");
+		}
+		let date = new Date();
+		date.setMinutes(date.getMinutes() + 5);
+		let expires = Date.now() + 1000 * 60 * 5;
+		res.cookie("fake-session", "fake-value", {
+			expires: new Date(expires),
+		});
+	}
 	next();
 });
 
 app.get("/protected-data", (req, res) => {
-	if (!req.headers.authorization || !req.headers.authorization.includes(jwt)) {
-		return res.status(401).send("Unauthorized");
-	}
 	res.send({ name: crypto.randomUUID(), id: 1 });
 });
 
 app.get("/permissions", (req, res) => {
-	if (!req.headers.authorization || !req.headers.authorization.includes(jwt)) {
-		return res.status(401).send("Unauthorized");
-	}
 	res.send({ can_get_data: true });
 });
 
