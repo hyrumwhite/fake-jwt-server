@@ -2,7 +2,15 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const encode = require("jwt-encode");
 const crypto = require("crypto");
+const arguments = require("./arguments.js");
+const {
+	port = 3535,
+	sessionLength = 30,
+	jwtLength = 15,
+	redirectURL = "http://localhost:3000",
+} = arguments;
 const app = express();
+
 app.use(cookieParser());
 // app.use(cors());
 let jwt = "";
@@ -18,7 +26,7 @@ const refreshJWT = () => {
 	);
 };
 refreshJWT();
-setInterval(refreshJWT, 1000 * 60 * 15);
+setInterval(refreshJWT, 1000 * 60 * jwtLength);
 app.use((req, res, next) => {
 	let origin = req.headers?.referer?.slice(0, -1) || "http://localhost:3000";
 	res.header("Access-Control-Allow-Origin", origin);
@@ -47,13 +55,11 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-	let date = new Date();
-	date.setMinutes(date.getMinutes() + 5);
-	let expires = Date.now() + 1000 * 60 * 5;
+	let expires = Date.now() + 1000 * 60 * sessionLength;
 	res.cookie("fake-session", "fake-value", {
 		expires: new Date(expires),
 	});
-	res.redirect("http://localhost:3000");
+	res.redirect(redirectURL);
 });
 
 app.use((req, res, next) => {
@@ -64,9 +70,7 @@ app.use((req, res, next) => {
 		) {
 			return res.status(401).send("Unauthorized");
 		}
-		let date = new Date();
-		date.setMinutes(date.getMinutes() + 5);
-		let expires = Date.now() + 1000 * 60 * 5;
+		let expires = Date.now() + 1000 * 60 * sessionLength;
 		res.cookie("fake-session", "fake-value", {
 			expires: new Date(expires),
 		});
@@ -75,11 +79,16 @@ app.use((req, res, next) => {
 });
 
 app.get("/protected-data", (req, res) => {
-	res.send({ name: crypto.randomUUID(), id: 1 });
+	res.send({ name: "john doe", id: crypto.randomUUID() });
 });
 
 app.get("/permissions", (req, res) => {
 	res.send({ can_get_data: true });
 });
 
-app.listen(3535);
+app.listen(port);
+
+console.info(`Server running at http://localhost:${port}`);
+console.info(`Login will redirect to ${redirectURL}`);
+console.info(`Login session will last ${sessionLength} minutes`);
+console.info(`JWT will last ${jwtLength} minutes`);
