@@ -18,7 +18,7 @@ let userID = crypto.randomUUID();
 const refreshJWT = () => {
 	jwt = encode(
 		{
-			name: "John Doesn't",
+			name: "John Doe",
 			uuid: userID,
 			timestamp: Date.now(),
 		},
